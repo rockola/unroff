@@ -1,0 +1,671 @@
+.\" $Revision: 1.12 $
+.ds Ve 1.0
+.\"
+.de Ex
+.RS
+.nf
+.nr sf \\n(.f
+.if !\\n(.U \{\
+.  ft B
+.  if n .sp
+.  if t .sp .5 \}
+..
+.de Ee
+.if !\\n(.U \{\
+.  ft \\n(sf
+.  if n .sp
+.  if t .sp .5 \}
+.fi
+.RE
+..
+.\"
+.de Sd
+.ds Dt \\$2
+..
+.\"
+.Sd $Date: 1995/08/23 12:07:31 $
+.TH unroff-html 1 "\*(Dt"
+.SH NAME
+unroff-html \- HTML 2.0 back-end for the programmable troff translator
+.SH SYNOPSIS
+.B unroff
+[
+.B \-fhtml
+] [
+.BI \-m package
+] [
+.IR file " | " option...\&
+]
+.SH OVERVIEW
+When called with the
+.B \-fhtml
+option,
+.I unroff
+loads the back-end for the Hypertext Markup Language (HTML) version 2.0.
+Please read
+.BR unroff (1)
+first for an overview of the Scheme-based, programmable troff translator
+and for a description of the generic options that exist in
+addition to
+.B \-f
+and
+.BR \-m .
+For information about extending and programming
+.I unroff
+also refer to the
+.IR "Unroff Programmer's Manual" .
+.LP
+.I unroff
+is usually invoked with an additional
+.BI \-m package
+option (such as
+.B \-ms
+or
+.BR \-man )
+to load the translation rules for the troff macros and other elements
+defined by the macro package that is used to typeset the document.
+If no
+.B \-m
+option is supplied, only the standard troff requests, special characters,
+escape sequences, etc. are recognized and translated to HTML by
+.I unroff
+as described in this manual.
+.SH OPTIONS
+The following HTML-specific options can be specified in the command
+line after the generic options.
+See
+.BR unroff (1)
+for a general description of keyword/value options and their types
+and for a list of options that are not specific to the target language.
+.TP
+.BR title " (string)"
+The value to be used for the <title> element in HTML output files.
+This option may be ignored by the code implementing a specific
+macro set, e.\|g. when special rules are employed to derive the title
+from the contents of the troff input files.
+Whether or not this option is required also depends on the specific
+.B \-m
+option used, but it may be omitted if no
+.B \-m
+option is given.
+.TP
+.BR document " (string)"
+The prefix used for the names of all output files.
+May be ignored depending on the macro package that has been selected.
+.TP
+.BR mail-address " (string)"
+The caller's mail address; may be used for \*(lqmailto:\*(rq URLs,
+in particular for the \*(lqhref\*(rq attribute of the <link>
+element that is usually generated.
+.TP
+.BR tt-preformat " (boolean)"
+If 1, font changes to a font that is mapped to the <tt> element
+are honored inside non-filled text (as described below).
+The default is 0, i.\|e. the font changes will be recorded, but no
+corresponding HTML tags will be emitted for them.
+.TP
+.BR handle-eqn " (string)"
+.TP
+.BR handle-tbl " (string)"
+.TP
+.BR handle-pic " (string)"
+These options specify how equations, tables, and pictures encountered
+in the troff input are processed.
+Possible values are \*(lqcopy\*(rq to include the raw eqn, tbl, or
+pic commands as pre-formatted text, \*(lqtext\*(rq to run the
+respective troff preprocessor (eqn, tbl, or pic) and include its output
+as pre-formatted text, or \*(lqgif\*(rq to convert the preprocessor
+output to a GIF image and include it in the HTML document as
+an inline image.
+The default is \*(lqtext\*(rq for
+.BR handle-tbl ,
+\*(lqgif\*(rq for the other options.
+See DESCRIPTION below for more information.
+.TP
+.BR eqn " (string)"
+.TP
+.BR tbl " (string)"
+.TP
+.BR pic " (string)"
+These options specify the programs to invoke as the eqn, tbl,
+and pic preprocessors.
+The defaults are site-dependent.
+.TP
+.BR troff-to-text " (string)"
+.TP
+.BR troff-to-gif " (string)"
+The programs to invoke for converting the output of a troff preprocessor
+to plain text or to a GIF image.
+The default values are site-dependent.
+See DESCRIPTION below for more information on these options.
+.SH FILES
+If no
+.B \-m
+option is supplied,
+.I unroff
+reads the specified input files and sends the HTML document to
+standard output, unless the
+.B document
+option is given, in which case its value together
+with the suffix \*(lq.html\*(rq is used as the name of an
+output file.
+If no input files are specified, input is taken from standard input.
+The output is enclosed by the usual HTML boiler-plate (<html>, <head>,
+and <body> elements), a <title> element with the specified title
+(or the value of
+.B document
+if no title has been given, or a default title if both are omitted),
+a <link> element with rev= and href= attributes if
+.B mail-address
+has been set, and any pending end tags are generated on end of input.
+.LP
+Note that this is the default action that is performed in the
+rare case when no macro package name has been specified, i.\|e. when
+processing \*(lqbare\*(rq troff input.
+Somewhat different rules may apply when processing, for
+example, a group of UNIX manual pages
+.RB ( \-man ).
+.LP
+See
+.BR unroff (1)
+for a list of Scheme files that are loaded on startup.
+.SH DESCRIPTION
+.SS "OUTPUT TRANSLATIONS"
+The characters `<', `>', and `&' are replaced by the entities
+`&lt;', `&gt;', and `&amp;' on output.
+In addition, the quote character is mapped to `&quot;' where
+appropriate.
+New mappings can be added by means of the
+.I defchar
+Scheme primitive as explained in the Programmer's Manual.
+.SS COMMENTS
+each troff comment is translated to a corresponding HTML tag
+followed by a newline; empty comments are ignored.
+Comments are also ignored when appearing inside a macro body.
+.SS "ESCAPE SEQUENCES"
+The following is a list of troff escape sequences that are recognized
+and the HTML output generated for them.
+Any escape sequence that does not appear in the list
+expands to the character after the escape character, and
+a warning is printed in this case.
+New definitions can be added and the predefined mappings can
+be replaced by calling the
+.I defescape
+Scheme primitive in the user's initialization file, in a user-supplied
+Scheme file, in a document, or on a site-wide basis by modifying
+the file 
+.B scm/html/common.scm
+in the installation directory.
+.LP
+.nf
+.if !\n(.U .ta 8n 16n 24n 32n 40n 48n 56n
+	\e&	nothing
+	\e-	-
+	\e|	nothing
+	\e^	nothing
+	\e\e	\e
+	\e'	'
+	\e`	`
+	\e"	rest of line as HTML comment tag
+	\e%	nothing
+	\e{	conditional input begin
+	\e}	conditional input end
+	\e*	contents of string
+	\espace	space
+	\e0	space
+	\ec	nothing; eats following newline
+	\ee	\e
+	\es	nothing
+	\eu	nothing, prints warning
+	\ed	nothing, prints warning
+	\ev	nothing, prints warning
+	\eo	its argument, prints warning
+	\ez	its argument, prints warning
+	\ek	sets specified register to zero
+	\eh	appropriate number of spaces for positive argument
+	\ew	length of argument in units
+	\el	repeats specified character, or <hr>
+	\en	contents of number register
+	\ef	see description of fonts below
+.fi
+.SS "SPECIAL CHARACTERS"
+The following special characters are mapped to their equivalent
+ISO-Latin 1 entities:
+.LP
+.nf
+	\e(12	\e(14	\e(34	\e(*b	\e(*m	\e(+-	\e(:A
+	\e(:O	\e(:U	\e(:a	\e(:o	\e(:u	\e(A:	\e(Cs
+	\e(O:	\e(Po	\e(S1	\e(S2	\e(S3	\e(U:	\e(Ye
+	\e(a:	\e(bb	\e(cd	\e(co	\e(ct	\e(de	\e(di
+	\e(es	\e(hy	\e(mu	\e(no	\e(o:	\e(r!	\e(r?
+	\e(rg	\e(sc	\e(ss	\e(tm	\e(u:
+.fi
+.LP
+Heuristics have to be used for the following special characters:
+.LP
+.nf
+	\e(**	*
+	\e(->	->
+	\e(<-	<-
+	\e(<=	<=
+	\e(==	==
+	\e(>=	>=
+	\e(Fi	ffi
+	\e(Fl	ffl
+	\e(aa	'
+	\e(ap	~
+	\e(br	|
+	\e(bu	+	(prints a warning)
+	\e(bv	|
+	\e(ci	O
+	\e(dd	***	(prints a warning)
+	\e(dg	**	(prints a warning)
+	\e(em	--
+	\e(en	-
+	\e(eq	=
+	\e(ff	ff
+	\e(fi	fi
+	\e(fl	fl
+	\e(fm	'
+	\e(ga	`
+	\e(lh	<=
+	\e(lq	``
+	\e(mi	-
+	\e(or	|
+	\e(pl	+
+	\e(rh	=>
+	\e(rq	''
+	\e(ru	_
+	\e(sl	/
+	\e(sq	o	(prints a warning)
+	\e(ul	_
+	\e(~=	~
+.fi
+.LP
+A warning is printed to standard error output for any special
+character not mentioned in this section.
+To add new definitions, and to customize existing ones, the
+.I defspecial
+Scheme primitive can be used.
+.SS "NON-FILLED TEXT"
+The
+.B .nf
+and
+.B .fi
+troff requests generate pairs of <pre> and </pre> tags.
+Nested requests are treated correctly, and currently
+active character formatting elements such as <i> (resulting
+from troff font changes) are temporarily disabled while
+the <pre> or </pre> is emitted.
+A warning is printed if a \*(lqtab\*(rq character is encountered
+within filled text.
+.SS FONTS
+The `\ef' escape sequence and the requests
+.B .ft
+(change current font) and
+.B .fp
+(mount font at font position) are supported in the usual way,
+both with numeric font positions as well as font names and
+the special name `P' to denote the previous font.
+The font position of the currently active font is available
+through the read-only number register `.f'.
+Initially, the font `R' is mounted on font positions 1 and 4,
+font `I' on font position 2, and font `B' on position 3.
+.LP
+To map troff font names to HTML character formatting elements,
+the \f2define-font\fP Scheme procedure is called with the name
+of a troff font to be used in documents, and
+HTML start and end tags to be emitted when changing to this font,
+or when changing
+.I from
+this font to another font, respectively.
+Whether <tt> and </tt> is generated inside non-filled (pre-formatted)
+text for fixed-width fonts is controlled by the option
+.BR tt-preformat .
+The following calls to
+.I define-font
+are evaluated on startup:
+.LP
+.nf
+.if !\n(.U \{\
+.  ft C
+.  ps -1
+.  vs -1 \}
+	(define-font  "R"   ""    "")
+	(define-font  "I"   '<i>  '</i>)
+	(define-font  "B"   '<b>  '</b>)
+	(define-font  "C"   '<tt> '</tt>)
+	(define-font  "CW"  '<tt> '</tt>)
+	(define-font  "CO"  '<i>  '</i>)    ; kludge for Courier-Oblique
+.if !\n(.U \{\
+.  ft
+.  ps
+.  vs \}
+.fi
+.LP
+Site administrators may add definitions here for fonts used
+at their site.
+Users can define mappings for new fonts by placing corresponding
+definitions in their documents or document-specific Scheme files.
+.SS "OTHER TROFF REQUESTS"
+The
+.B .br
+request generates a <br> tag.
+.LP
+.B .sp
+requires a positive argument and is mapped to the appropriate number
+of <p> tags (or newline characters inside non-filled/pre-formatted
+text).
+Likewise, the request
+.BR .ti ,
+when called with a positive indent, produces a <br> followed by the
+appropriate number of non-breakable spaces.
+.LP
+The
+.B .tl
+requests justs emits the title parts delimited by spaces.
+It is impossible to preserve the meaning of this request
+in HTML 2.0.
+.LP
+The horizontal line drawing escape sequence `\el' just repeats
+the specified character (or underline as default) to draw
+a line.
+If the given length looks like it could be the line length
+(that is, if it exceeds a certain value), a <hr> tag
+is produced instead.
+Example:
+.LP
+.nf
+	\el'5c\e&-'
+	\el'60'
+.fi
+.LP
+The first of these two requests
+would produce a line of 20 dashes, while the second
+request would generate a <hr> tag (the '\e&' is required
+because the dash could be interpreted as a continuation of
+the numeric expression).
+.LP
+Centering
+.RB ( .ce )
+is simulated by producing a <br> at the end of each line, as
+this functionality is not supported by HTML 2.0.
+.LP
+The following requests are silently ignored; as the corresponding
+functions cannot be expressed in HTML 2.0 or are controlled by
+the client.
+Ignoring these requests most likely does no harm.
+.LP
+.nf
+	.ad	.bp	.ch	.fl	.hw	.hy	.lg
+	.na	.ne	.nh	.ns	.pl	.ps	.rs
+	.vs	.wh
+.fi
+.LP
+All troff requests not mentioned in this section by default
+cause a warning message to be printed to standard error output,
+except for these basic requests which have their usual
+semantics:
+.LP
+.nf
+	.am	.as	.de	.ds	.ec	.el	.ie
+	.if	.ig	.nr	.rm	.rr	.so	.tm
+.fi
+.LP
+The
+.I defrequest
+Scheme primitive is used to associate an event handling procedure
+with a request as documented in the Programmer's Manual.
+.SS "END OF SENTENCE"
+The sequence \*(lq<tt>space</tt>\*(rq is produced at the end of
+each sentence to provide additional space, except inside non-filled text.
+A sentence is defined a sequence of characters followed by
+a period, a question mark, or an exclamation mark, followed
+by a newline.
+The usual convention to suppress end-of-sentence recognition
+by adding the escape sequence `\e&' is correctly implemented by
+.IR unroff .
+To change the end-of-sentence function, the
+.I sentence-event
+can be redefined from within Scheme code as described in
+the Programmer's Manual.
+.SS "SCALE INDICATORS"
+As the notions of vertical spacing, character width, device
+resolution, etc. do not exist in HTML, the scaling for the
+usual troff scale indicators is defined once on startup and
+then remains constant.
+For simplicity, the scaling usually employed by
+.BR nroff (1)
+is taken.
+.SS "EQUATIONS, TABLES, PICTURES"
+Interpretation of embedded eqn, tbl, and pic preprocessor input
+is controlled by the options
+.BR handle-eqn ,
+.BR handle-tbl ,
+and
+.B handle-pic
+(see OPTIONS above).
+These options affect the input lines from a starting
+.BR .EQ ,
+.BR .TS ,
+or
+.B .PS
+request up to and including the matching
+.BR .EN ,
+.BR .TE ,
+or
+.B .PE
+request, as well as text surrounded by the current eqn
+inline equation delimiters.
+Each of the options can have one the following values:
+.TP
+.B copy
+The preprocessor input (including the enclosing requests) is
+placed inside <pre> and </pre>.
+If assigned to the option
+.BR handle-eqn ,
+inline equations are rendered in the font currently mounted
+on font position 2.
+.TP
+.B text
+The input is sent to the respective preprocessor (as specified
+by the options
+.BR eqn ,
+.BR tbl ,
+or
+.BR pic ),
+and its result is piped to the shell command referred to by the
+option
+.BR troff-to-text ,
+which typically involves a call to
+.BR nroff (1)
+or an equivalent command.
+As with \*(lqcopy\*(rq, the result is then placed inside
+<pre> and </pre>, unless the source is an inline equation.
+.IP
+The value of
+.B troff-to-text
+is filtered through a call to the
+.I substitute
+Scheme primitive with the name of an output file as its argument;
+this file name can be referenced from within the option's value
+by the substitute specifier \*(lq%1%\*(rq (see the Programmer's
+Manual for a description of
+.I substitute
+and a list of substitute specifiers).
+Here is a typical value for the
+.B troff-to-text
+option:
+.Ex
+"groff \-Tascii | col \-b | sed '/^[ \et]*$/d' > %1%"
+.Ee
+.TP
+.B gif
+Input lines are preprocessed as described under \*(lqtext\*(rq, and
+the result is piped to the shell command named by the option
+.BR troff-to-gif .
+The latter is subject to a call to
+.I substitute
+with the name of a temporary file (which may be used to store intermediate
+PostScript output) and the name of the output file where the resulting
+GIF image must be stored.
+The entire preprocessor input is replaced by an <img> element with
+a reference to the GIF file and a suitable \*(lqalt=\*(rq attribute.
+Unless processing an inline equation, the <img> element is
+surrounded by <p> tags.
+.IP
+The names of the files containing the GIF images are generated
+from the value of the
+.B document
+option, a sequence number, and the suffix \*(lq.gif\*(rq.
+Therefore, the
+.B document
+option must have been set when using the \*(lqgif\*(rq method,
+otherwise a warning is printed and the preprocessor input
+is skipped.
+.LP
+In any case, the output of a call to eqn is ignored if the
+input consists of calls to \*(lqdelim\*(rq or \*(lqdefine\*(rq
+and empty lines exclusively.
+When processing eqn input, calls to \*(lqdelim\*(rq are intercepted by
+.I unroff
+to record changes of the inline equation delimiters.
+.SS "HYPERTEXT LINKS"
+The facilities for embedding arbitrary hypertext links in troff
+documents are still experimental in this version of
+.I unroff
+and thus are likely to change in future releases.
+To use them, mention the file name \*(lqhyper.scm\*(rq in the
+command line before any troff source files.
+At the beginning of the first troff file, source the file
+\*(lqtmac.hyper\*(rq from the directory \*(lqdoc\*(rq like this:
+.LP
+.nf
+	.if !\en(.U .so tmac.hyper
+.fi
+.LP
+The request
+.B .Hr
+can then be used to create a hypertext link.
+Its usage is:
+.LP
+.nf
+	.Hr  -url       URL    anchor-text  [suffix]
+	.Hr  -symbolic  label  anchor-text  [suffix]
+	.Hr  troff-text
+.fi
+.LP
+The first two forms are recognized by
+.I unroff
+and the third form is recognized by troff.
+The first form is used for links pointing to external resources,
+and the second one is used for forward or backward links referencing
+anchors defined in a file belonging to the same document.
+An anchor is placed in the document by calling the request
+.BR .Ha :
+.LP
+.nf
+	.Ha label anchor-text
+.fi
+.LP
+The label specified in a call to
+.B .Ha
+can then be used in calls to
+.BR ".Hr -symbolic" .
+All symbolic references must have been resolved at the end of the document.
+The \*(lqanchor-text\*(rq is placed between the tags <a> and </a>;
+\*(lqsuffix\*(rq is appended to the closing </a> if present.
+\*(lqtroff-text\*(rq is just formatted in the normal way.
+Quotes must be used if any of the arguments contains spaces.
+.LP
+Use of the hypertext facilities is demonstrated by the troff source
+of the Programmer's Manual that is included in the
+.I unroff
+distribution.
+.SH "SCHEME PROCEDURES"
+The following Scheme procedures, macros, and variables are defined
+by the HTML 2.0 back-end and can be used from within user-supplied
+Scheme code:
+.TP
+(\f2define-font name start-tag end-tag\fP)
+Associates a HTML start tag and end tag (symbols) with a troff
+font name (string) as explained under FONTS above.
+The font name can then be used in
+.BR .fp ,
+.BR .ft ,
+and `\ef' requests.
+.TP
+(\f2reset-font\fP)
+Resets both the current and previous font to the font mounted
+on position 1.
+.TP
+\f2current-font\fP
+.TP
+\f2previous-font\fP
+These variables hold the current and previous font as
+(integer) font positions.
+.TP
+(\f2with-font-preserved\fP . \f2body\fP)
+This macro can be used to temporarily change to font \*(lqR\*(rq,
+evaluate \f2body\fP, and revert to the font that has been
+active when the form was entered.
+The macro returns a string that can be output using the
+primitive \f2emit\fP or returned from an event procedure.
+.TP
+(\f2preform enable?\fP)
+If the argument is #t, pre-formatted text is enabled, otherwise disabled.
+.TP
+\f2preform?\fP
+This boolean variable holds #t if pre-formatted text is enabled,
+#f otherwise.
+.TP
+(\f2with-preform-preserved\fP . \f2body\fP)
+A macro that can be used to temporarily disable pre-formatted
+text, evaluate \f2body\fP, and then re-enable it if appropriate.
+The macro expands to a string that must be output or returned from
+an event procedure.
+.TP
+(\f2parse-unquote string\fP)
+Temporarily establishes an output translation to map the quote
+character to \*(lq&quot;\*(rq, applies \f2parse\fP (explained
+in the Programmer's Manual) to its argument, and returns the result.
+.TP
+(\f2center n\fP)
+Centers the next \f2n\fP input lines (see description of
+.B .ce
+under TROFF REQUESTS above).
+If \f2n\fP is zero, centering is stopped.
+.TP
+\f2nbsp\fP
+A Scheme variable that holds a string interpreted as a non-breaking
+space by HTML clients.
+.SH "SEE ALSO"
+.BR unroff (1),
+.BR unroff-html-man (1),
+.BR unroff-html-ms (1);
+.br
+.BR troff (1),
+.BR nroff (1),
+.BR groff (1),
+.BR eqn (1),
+.BR tbl (1),
+.BR pic (1).
+.LP
+Unroff Programmer's Manual.
+.LP
+http://www.informatik.uni-bremen.de/~net/unroff
+.LP
+Berners-Lee, Connolly, et al.,
+HyperText Markup Language Specification\(em2.0,
+Internet Draft, Internet Engineering Task Force.
+.SH BUGS
+The `\espace' escape sequence should be mapped to the &#160; entity
+(non-breaking space), but this entity is not supported by a number
+of HTML clients.
+.LP
+Only the font positions 1 to 9 can currently be used.
+There should be no limit.
+.LP
+The extra space generated for end of sentence should be configurable.
+.LP
+Underlining should be supported.

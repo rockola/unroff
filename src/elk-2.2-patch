@@ -1,0 +1,53 @@
+*** 1.59	1994/01/24 16:03:30
+--- src/main.c	1995/02/01 17:06:20
+***************
+*** 90,95 ****
+--- 90,98 ----
+      struct stat st;
+      extern int errno;
+      char foo;
++ #ifdef NOMAIN
++ #  define foo (av[0][0])
++ #endif
+  
+  #ifdef CAN_DUMP
+      bzero (unused, 1);  /* see comment above */
+***************
+*** 207,213 ****
+       * the load-path, so that -p can be used.
+       */
+      Error_Tag = "scheme-init";
+!     initfile = Safe_Malloc (strlen (SCM_DIR) + 1 + sizeof (INITFILE));
+      sprintf (initfile, "%s/%s", SCM_DIR, INITFILE);
+      if (stat (initfile, &st) == -1 && errno == ENOENT)
+  	file = Make_String (INITFILE, sizeof(INITFILE)-1);
+--- 210,216 ----
+       * the load-path, so that -p can be used.
+       */
+      Error_Tag = "scheme-init";
+!     initfile = Safe_Malloc (strlen (SCM_DIR) + 1 + sizeof (INITFILE) + 1);
+      sprintf (initfile, "%s/%s", SCM_DIR, INITFILE);
+      if (stat (initfile, &st) == -1 && errno == ENOENT)
+  	file = Make_String (INITFILE, sizeof(INITFILE)-1);
+***************
+*** 220,227 ****
+  
+      Error_Tag = "top-level";
+  #ifdef NOMAIN
+!     if ((loadfile = toplevel) == 0)
+  	return;
+  #endif
+      if (loadfile == 0)
+  	loadfile = "toplevel.scm";
+--- 223,233 ----
+  
+      Error_Tag = "top-level";
+  #ifdef NOMAIN
+!     if ((loadfile = toplevel) == 0) {
+! 	Interpreter_Initialized = 1;
+! 	GC_Debug = debug;
+  	return;
++     }
+  #endif
+      if (loadfile == 0)
+  	loadfile = "toplevel.scm";

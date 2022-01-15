@@ -1,0 +1,133 @@
+This is version 1.0 of unroff.
+
+Unroff is a Scheme-based, programmable, extensible troff translator
+with a back-end for the Hypertext Markup Language.  Unroff is free
+software and is distributed both as source and as precompiled binaries.
+
+
+* Overview
+
+  Unroff reads and parses UNIX troff documents and translates the embedded
+  markup into a different format.  Neither the actual output format nor
+  any knowledge about particular troff macro sets (-man, -ms, etc.) are
+  hard-wired into unroff.  Instead, the translation process is controlled
+  by a set of user-supplied procedures written in the Scheme programming
+  language.
+
+  Translation rules for new output formats and troff macro packages can
+  be added easily by providing a corresponding set of Scheme procedures
+  (a `back-end').  Version 1.0 of unroff includes back-ends for translating
+  documents using the `man' and `ms' macros into the Hypertext Markup
+  Language (HTML) version 2.0.  Additional requests facilitate use of
+  arbitrary hypertext links in troff documents.
+
+
+* unroff and troff
+
+  In contrast to conventional troff `converters' (usually Perl scripts
+  some of which process nroff output) unroff includes a full troff parser
+  and closely mimics the troff processing engine.
+  
+  This enables unroff to handle user-defined macros, strings, and
+  number registers, nested if-else requests, arbitrary fonts and font
+  positions, low-level formatting requests such as \l, \c, and \h, and
+  idiosyncrasies such as troff `copy mode' and the subtle differences
+  between request and macro invocations.
+
+  Unroff has adopted a number of groff extensions, among them long names
+  for macros, strings, number registers, and special characters, and the
+  escape sequences \$@ and \$*.
+
+
+* unroff and Scheme
+
+  Unroff uses Elk, the Scheme-based Extension Language Kit, to achieve
+  programmability.  It includes a full Scheme language implementation
+  with the usual amenities such as garbage collection, interactive
+  programming and testing, and dynamic loading.  Standard Scheme has
+  been augmented by a set of new Scheme data types and primitives that
+  aid in writing new unroff back-ends.
+
+  A new troff request and an extension to the `.ig' request allow for
+  Scheme code to be embedded in troff documents; the code is then
+  evaluated on the fly as the documents are processed by unroff.
+
+  Unroff may be viewed as a prototype for hybrid applications that use
+  Scheme (in particular Elk) as their extension language.  Approximately
+  half of its source consists of portable ANSI C code, and the other
+  half is written in Scheme and can be configured and tailored easily
+  without the need to recompile unroff.  Authors of Elk-based applications
+  are encouraged to look into the source code or reuse parts of it for
+  their own projects.
+
+  As the time-critical Scheme primitives provided of unroff have been
+  coded in (efficient) C, its performance comes close to that of nroff
+  processing the same troff input.
+
+
+* unroff and hypertext
+
+  troff documents that were originally written without intentions to
+  make them available in the World Wide Web (such as UNIX manual pages)
+  can easily be translated to the Hypertext Markup Language using the
+  predefined HTML back-ends.
+
+  As unroff closely simulates ordinary troff, even large or complex
+  documents (like technical reports or theses with many user-defined
+  macros) can be translated to HTML automatically without having to
+  add any structural cues to the documents.
+  
+  The `-man' support has been tested with several hundred vendor- and
+  user-supplied manual pages and has produced good results in all but
+  less than a dozen cases (a few manual pages were found to make excessive
+  use of low-level troff constructs or to include tbl output verbatim).
+
+
+* Managing hypertext documents with troff
+
+  Authors can benefit from unroff not only as a converter for existing
+  documents, but also when writing new documents that must exist both
+  in high-quality paper form and in the World Wide Web as hypertext.
+
+  Rather than writing hypertext documents directly in HTML (which is
+  cumbersome for long or complex texts), authors can continue using
+  ordinary troff together with the usual preprocessors and macro packages.
+  Unroff is then employed to produce the WWW form, while troff is used
+  in the normal way to typeset the same text, producing the printed
+  version (or, using nroff, an ASCII version if desired).
+
+  In this way authors of hypertext documents can take full advantage of
+  the usual troff facilities such as user-defined macros, conditional text,
+  tables, equations, and drawings, automatic table of contents generation,
+  footnotes/endnotes, indexes, etc., none of which are available when
+  composing documents directly in plain HTML.
+
+  Two new troff requests for embedding hypertext links in troff documents
+  are provided by the unroff HTML back-end.  Arbitrary forward and backward
+  references using symbolic labels (rather than actual file names) among
+  groups of troff source files are supported.  Another new request and
+  another extension to `.ig' allow for HTML code to be embedded directly
+  in troff documents.  The hypertext capabilities are demonstrated by
+  the troff source of the Programmer's Manual that is part of the unroff
+  distribution.
+
+
+* Availability
+
+  The source distribution of unroff 1.0 as well as binary distributions
+  (with full Scheme source code and documentation) are available under:
+
+  http://www.informatik.uni-bremen.de/~net/unroff/unroff.html#dist
+
+  You can obtain Elk 3.0 from the same WWW server at:
+
+  http://www.informatik.uni-bremen.de/~net/elk
+
+  Elk 3.0 is also available from a number of FTP servers including these:
+
+  ftp://ftp.x.org/contrib/devel_tools/elk-3.0.tar.gz
+  ftp://ftp.uni-bremen.de/pub/programming/languages/scheme/elk/elk-3.0.tar.gz
+
+
+--
+Oliver Laumann  <net@cs.tu-berlin.de>                 # $Revision: 1.4 $

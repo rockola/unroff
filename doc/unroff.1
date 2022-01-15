@@ -1,0 +1,682 @@
+.\" $Revision: 1.16 $
+.ds Ve 1.0
+.\"
+.de Ex
+.RS
+.nf
+.nr sf \\n(.f
+.if !\\n(.U \{\
+.  ft B
+.  if n .sp
+.  if t .sp .5 \}
+..
+.de Ee
+.if !\\n(.U \{\
+.  ft \\n(sf
+.  if n .sp
+.  if t .sp .5 \}
+.fi
+.RE
+..
+.\"
+.de Sd
+.ds Dt \\$2
+..
+.\"
+.Sd $Date: 1995/08/23 12:07:31 $
+.TH unroff 1 "\*(Dt"
+.SH NAME
+unroff \- programmable, extensible troff translator
+.SH SYNOPSIS
+.B unroff
+[
+.BI \-f format
+] [
+.BI \-m package
+] [
+.BI \-h heapsize
+] [
+.B \-C
+]
+.if n .ti +0.5i
+[
+.B \-t
+] [
+.IR file " | " option...\&
+]
+.SH OVERVIEW
+.I unroff
+reads and parses documents with embedded troff markup
+and translates them to a different format\(emtypically
+to a different markup language such as SGML.
+The actual output format is not hard-wired into
+.IR unroff ;
+instead, the translation is performed by a set of user-supplied rules
+and functions written in the
+.I Scheme
+programming language.
+.I unroff
+employs the Extension Language Kit
+.I Elk
+to achieve programmability based on the Scheme language:
+a fully-functional Scheme interpreter is embedded in the translator.
+.LP
+The documents that can be processed by
+.I unroff
+are not restricted to a specific troff macro set.
+Translation rules for a new macro package can be added by supplying
+a set of corresponding Scheme procedures (a \*(lqback-end\*(rq).
+Predefined sets of such procedures exist for a number of combinations
+of target language and troff macro package:
+.I unroff
+\*(Ve supports translation to the \*(lqHypertext Markup Language\*(rq
+(HTML) version 2.0 for the
+.B \-man
+and
+.B \-ms
+macro packages as well as \*(lqbare\*(rq troff (see
+.BR unroff-html (1),
+.BR unroff-html-man (1),
+and
+.BR unroff-html-ms (1)
+for a description).
+.LP
+Unlike conventional troff conversion tools,
+.I unroff
+includes a full troff parser and can therefore handle user-defined
+macros, strings, and number registers, nested if-else requests
+(with text blocks enclosed by `\e{' and `\e}' escape sequences), arbitrary
+fonts and font positions, troff \*(lqcopy mode\*(rq, low-level formatting
+requests such as `\el' and '\eh', and the subtle
+differences between request and macro invocations that are inherent
+in the troff processing model.
+.I unroff
+has adopted a number of troff extensions introduced by
+.IR groff ,
+among them long names for macros, strings, number registers, and
+special characters, and the `\e$@' and `\e$*' escape sequences.
+.LP
+.I unroff
+interprets its input stream as a sequence of \*(lqevents\*(rq.
+Events include the invocation of a troff request or macro, the use of a
+troff escape sequence or special character, a troff string
+or number register reference, end of sentence, start
+of a new input file, and so on.
+For each event encountered
+.I unroff
+invokes a Scheme procedure associated with that event.
+Some types of events require a procedure that returns a string (or an
+object that can be coerced into a string),
+which is then interpolated into the input or output stream;
+for other types of events, the event procedures are just called
+for their side-effects.
+.LP
+The set of Scheme procedures to be used by
+.I unroff
+is determined by the output format and the name of the troff
+macro package.
+In addition, users can supply event procedures for their own macro
+definitions (or replace existing ones) in form of a simple Scheme
+program passed to
+.I unroff
+along with the troff input files; Scheme code can even be directly
+embedded in the troff input as described below.
+.LP
+The full capabilities of
+.IR unroff
+and the Scheme primitives required to write extensions or support
+for new output formats are described in the
+.IR "Unroff Programmer's Manual" .
+.SH "GENERIC OPTIONS"
+.TP
+.BI \-f format
+Specifies the output format into which the troff input files are
+translated.
+If no
+.B \-f
+option is given, a default output format is used (for
+.I unroff
+version \*(Ve the default is
+.B \-f\c
+.IR html ).
+This default can be overridden by setting the
+.SB UNROFF_FORMAT
+environment variable.
+.TP
+.BI \-m name
+Specifies the name of the macro package that would be used by ordinary
+troff to typeset the document.
+In contrast to troff
+.I unroff
+does not actually load the macro package.
+Instead, the specified name\-in combination with the specified output
+format\-selects a set of Scheme files providing the procedure definitions
+that control the translation process (see
+.B FILES
+below).
+Therefore a corresponding
+.B tmac
+file need not exist for a given
+.B \-m
+option.
+.TP
+.BI \-h heapsize
+This option can be used to specify a non-standard heap size (in Kbytes)
+for the Scheme interpreter included in
+.IR unroff ;
+see
+.BR elk (1).
+.TP
+.B \-C
+Enables troff compatibility mode.
+In compatibility mode certain
+.I groff
+extensions such as long names are not recognized.
+.TP
+.B \-t
+Enables test mode.
+Instead of processing troff input files,
+.I unroff
+enters an interactive Scheme top-level.
+This can be useful to interactively experiment with the Scheme
+primitives defined by
+.I unroff
+or to test or debug user-defined Scheme procedures.
+.SH "KEYWORD/VALUE OPTIONS"
+In addition to the generic options, a set of output-format-specific
+options can be set from the command line and from within troff and
+Scheme input files.
+When specified on the command line, these options have the form
+.Ex
+\f2option\fP=\f2value\fP
+.Ee
+where the format of
+.I value
+depends on the
+.I type
+of the option.
+For example, most output formats defines an option
+.B document
+whose value is used as a prefix for all output files created during
+the translation.
+The option is assigned a value by specifying a token such as
+.Ex
+document=thesis
+.Ee
+on the command line.
+This option's value is interpreted as a plain string, i.\|e.\&
+its type is
+.BR string .
+.LP
+The Scheme back-ends and user-supplied extensions can define their
+own option types, but at least the following types are recognized:
+.TP 10n
+.B integer
+the option value is composed of an optional sign and an (arbitrary)
+string of digits
+.TP 10n
+.B boolean
+the option value must either be the character 1 (true) or the
+character 0 (false)
+.TP 10n
+.B character
+a single character must be specified as the option value
+.TP 10n
+.B string
+an arbitrary string of characters can be specified
+.TP 10n
+.B dynstring
+\*(lqdynamic string\*(rq; the option value is either
+.RS
+.TP
+.I string
+to assign a string to the option in the normal way, or
+.TP
+.BI + string
+to append the characters after the plus sign
+to the option's current value, or
+.TP
+.BI \- string
+to remove the characters after the minus sign from the
+option's current value.
+.RE
+.LP
+These extension-specific options must appear after the generic
+.I unroff
+options and may be mixed with the file name arguments.
+As the option assignments and specified input files are processed in
+order, the value given for an option is in effect for all the input
+files that appear on the command line to the right of the option.
+.LP
+The exact set of keyword/value options is determined by the
+Scheme code loaded for a given combination of output format
+and macro package name and is described in the corresponding
+manuals.
+The following few options can always be set, regardless of the
+actual output format:
+.TP
+.BR include-files " (boolean)"
+If true,
+.B .so
+requests are executed by
+.I unroff
+in the normal way (that is, the named input file is read and
+parsed), otherwise
+.B .so
+requests are ignored.
+The default value is 1.
+.TP
+.BR if-true " (dynstring)"
+the specified characters are assigned to (appended to, removed from)
+the set of one-character conditions that are regarded as true
+by the
+.B .if
+and 
+.B .ie
+requests.
+The default value is "to".
+.TP
+.BR if-false " (dynstring)"
+like
+.BR if-true ;
+specifies the one-character conditions regarded as false.
+The default value is "ne".
+.SH FILES
+.SS "INPUT FILES"
+On startup,
+.I unroff
+loads the Scheme source files that control the translation process.
+All these files are loaded from subdirectories of a site-specific
+\*(lqlibrary directory\*(rq, typically something like
+.BR /usr/local/lib/unroff .
+The directory is usually chosen by the system administrator when
+installing the software and can be overridden by setting the
+.SB UNROFF_DIR
+environment variable.
+The path names mentioned in the following are relative to this
+library directory.
+.LP
+The first Scheme file loaded is
+.B scm/troff.scm
+which contains basic definitions such as the built-in options
+and option types, implementations for troff requests that are
+not output-format specific, and utility functions to be used
+by the back-ends or by user-supplied extensions.
+Next, the file
+.BI scm/ format /common.scm
+is loaded, where
+.I format
+is the value of the option
+.B \-f
+as given on the command line (or its default value).
+The file implements the translation of the basic troff
+requests, escape sequences, and special characters, etc.
+The code dealing with macro invocations is loaded from
+.BI scm/ format / package .scm
+where 
+.I package
+is the value of the option
+.B \-m
+with the letter `m' prepended.
+.LP
+Finally, the file
+.B .unroff
+is loaded from the caller's home directory if present.
+Arbitrary Scheme code can be placed in this initialization file.
+It is typically used to assign values to package-specific
+keyword/value options according to the user's preferences
+(by means of the
+.I set-option!
+Scheme primitive as explained in the Programmer's Manual).
+.LP
+When the initial files have been loaded, any troff input files specified
+in the command line are read and parsed.
+The special file name
+.RB ` \- '
+can be used to indicate standard input (usually in combination with
+ordinary file names).
+If no file name is given,
+.I unroff
+reads from standard input.
+.LP
+In addition to troff input files, file containing Scheme code can
+be mentioned in the command line.
+Scheme files (which by convention end in
+.BR .scm )
+are loaded into the Scheme interpreter and usually contain
+used-defined Scheme procedures to translate specific macros or
+to replace existing procedures, or other user-supplied extensions
+of any kind.
+Scheme files named in the command line (or loaded explicitly from
+within other files) are resolved against the directory
+.B scm/misc/
+which may hold site-specific extensions or other supplementary
+packages.
+troff files and Scheme files can be mixed freely in the command line.
+.SS "OUTPUT FILES"
+Whether 
+.I unroff
+sends its output to standard output or produces one or more output
+files is not hard-wired but determined by the combination of output
+format and macro package.
+Generally, if no troff input files are specified, output is directed
+to standard output, but this rule is not mandatory and may
+be overridden by specific back-ends.
+The
+.B document
+option is usually honored, although other rules may be employed to
+determine the names of output files (for example, the extension
+that implements
+.B \-man
+for a given output format may derive the name of the output file
+for a manual page from the input file name; see
+.BR unroff-html-man (1)).
+.LP
+If
+.I unroff
+is interrupted or quits early, any output files produced so far may be
+incomplete or may contain wrong or inconsistent data, because
+several passes may be required to complete an output file (for example,
+to resolve cross references between a set of files), or because
+an output file is not necessarily produced as a whole, but
+.I unroff
+may work on several files simultaneously.
+.SH EXAMPLES
+.LP
+To translate a troff document composed of two files and written with the
+\*(lqms\*(rq macro package to HTML 2.0,
+.I unroff
+might be called like this:
+.Ex
+unroff \-fhtml \-ms doc.tr doc.tr
+.Ee
+Two options specific to the combination of
+.B \-fhtml
+and
+.B \-ms
+might be added to specify a prefix for output files and to have
+the resulting output split into separate files after each section
+(see
+.BR unroff-html-ms (1)):
+.Ex
+unroff \-fhtml \-ms document=out/ split=1 doc.tr doc.tr
+.Ee
+Additional features may be loaded from Scheme files specified in the
+command line, e.\|g.\&
+.B hyper.scm
+which implements general Hypertext requests (and gets loaded from
+.BR scm/misc/ )
+and a user-supplied file in the current directory providing translation
+rules for user-defined troff macros:
+.Ex
+.ne 2
+unroff \-fhtml \-ms document=out/ split=1 hyper.scm doc.scm\e
+       doc.tr doc.tr
+.Ee
+.SH "TROFF SUPPORT AND EXTENSIONS"
+As
+.I unroff
+translates troff input into another language rather than typesetting
+the text in the usual way, its processing model necessarily differs
+from that of conventional troff.
+For a detailed description refer to the Programmer's Manual.
+.LP
+In brief,
+.I unroff
+copies characters from input to output, optionally performing
+target-language-specific character translations.
+For each request or macro invocation, string or number register
+reference, special character, escape sequence, sentence end, or
+.BR eqn (1)
+inline equation encountered in the input stream,
+.I unroff
+checks whether an \*(lqevent value\*(rq has been specified by
+the Scheme code (user-supplied or part of the back-end).
+An event value is either a plain string, which is then treated as
+if it had been part of the input stream, or a Scheme procedure,
+which is then invoked and must in turn return a string.
+The Scheme procedures are passed arguments, e.\|g. the macro
+or request arguments in case of a procedure attached to a macro
+or request, or an escape sequence argument for functions such as
+`\ef' or `\ew'.
+.LP
+If no event value has been associated with a particular macro,
+string, or number register,
+.I unroff
+checks whether a definition has been supplied in the normal way,
+i.\|e. by means of
+.BR .de ,
+.BR .ds ,
+or
+.BR .nr .
+In this case, the value of the macro, string, or register is
+interpolated as done by ordinary troff.
+If no definition can be found, a fallback definition is looked up
+as a last resort; and if everything fails, a warning is printed
+and the event is ignored.
+Similarly, event procedures are invoked at end of input line,
+when an input file is opened or closed, at program start and
+termination, and for each option specified in the command line;
+but these procedures are called solely for their side-effects
+(i.\|e. the return values are ignored).
+.LP
+Most Scheme procedures just emit the target language's representation
+of the event with which they are associated.
+Other procedures perform various kinds of bookkeeping; the procedure
+associated with the
+.B .de
+request, for example, puts the text following
+aside for later expansion, and the event procedures attached to
+the requests
+.B .ds
+and
+.B .nr
+and to the escape sequences `\e*' and `\en'
+implement troff strings and number registers.
+This way, even basic troff functions need not be hard-wired and can
+be altered or replaced freely without recompiling
+.IR unroff .
+.LP
+The rule that an event value associated with a macro has precedence
+over the actual macro definition accommodates higher-level,
+structure-oriented target languages (such as SGML).
+While the micro-formatting contained in a typical
+.B \-ms
+macro definition, for example, makes sense to an ordinary typesetting
+program, it is usually impossible to infer the macro's
+.I structural
+function from it (new paragraph, quotation, etc.).
+On the other hand, troff documents often define a few additional,
+simple macros that just serve as an abbreviation for a sequence
+of predefined macros; in this case event procedures need not
+specified, as
+.I unroff
+will then perform normal macro expansion.
+.LP
+.I unroff
+usually takes care to not rescan the characters returned by event
+procedures as if their results had been normal input, because
+most event procedures already return code in the target language rather
+than troff input that can be rescanned.
+This, however, cannot always be avoided; for example, if a troff string
+reference occurs at macro definition time (because `\e*' is used rather
+than `\e\e*'), the string value ends up in the macro body and will still
+be rescanned when the macro is invoked.
+A few other pitfalls caused by differences in the processing models of
+troff and
+.I unroff
+are listed in the BUGS section below.
+.LP
+The scaling performed for the usual troff scale indicators
+can be manipulated by a calling a Scheme primitive from within
+the Scheme code implementing a particular back-end.
+.SS "NEW TROFF REQUESTS"
+To aid transparent output of code in the target language and
+evaluation of inline Scheme code,
+.I unroff
+supports two new requests and two extensions to the
+.B .ig
+(ignore input lines) troff request.
+.LP
+If
+.B .ig
+is called with the symbol
+.B >>
+as its first argument, all input lines up to (but not including)
+the terminating
+.B .>>
+are sent to the current output file.
+Example:
+when translating to the Hypertext Markup Language, the construct
+could be used to emit literal HTML code like this:
+.Ex
+.ne 6
+\&.ig >>
+<address>
+Bart Simpson<br>
+Springfield
+</address>
+\&.>>
+.Ee
+.LP
+To produce a single line of output, the new request
+.B .>>
+can be used as in this HTML example:
+.Ex
+\&.>> "<code>result = i+1;</code>"
+.Ee
+.LP
+If the
+.B .ig
+request is called with the argument
+.BR ##,
+everything up to the terminating
+.B .##
+is passed to the Scheme interpreter for evaluation.
+This allows users to embed Scheme code in a troff document which
+is executed when the document is processed by
+.IR unroff .
+One use of this construct is to provide a Scheme event procedure
+for a user-defined macro by placing the corresponding Scheme
+definition in the same source file right below the troff macro definition.
+Similarly, the request
+.B .##
+can be used to evaluate a short S-expression; all arguments to
+the request are concatenated and then passed to the Scheme
+interpreter.
+.LP
+Note that inline Scheme code is a potentially dangerous feature,
+as a document received by someone else may contain embedded code
+that does something unexpected when the file is processed by
+.I unroff
+(but it is probably not more dangerous than the standard troff
+.B .pi
+request or the
+.B .sy
+request of
+.IR ditroff ).
+.LP
+.I unroff
+defines the following new read-only number registers:
+.TP
+.B .U
+This register always expand to 1.
+It can be used by macros to determine whether the document is
+being processed by
+.IR unroff .
+.TP
+.B .C
+Expands to 1 if troff compatibility mode has been enabled
+by using the option
+.BR \-C ,
+to 0 otherwise.
+.LP
+The following new escape sequences are available in a macro
+body during macro expansion:
+.TP
+.B $0
+The name of the current macro.
+.TP
+.B $*
+The concatenation of all arguments, separated by spaces.
+.TP
+.B $@
+The concatenation of all arguments, separated by spaces, and
+with each argument enclosed by double quotes.
+.LP
+The names of strings, macros, number registers, and fonts may be of
+any length.
+As in
+.IR groff ,
+square brackets can be used for names of arbitrary length:
+.Ex
+\ef[font]   \e*[string]   \en[numreg]   ...
+.Ee
+.LP
+There is no limit on the number of macro arguments, and the following
+syntax can be used to reference the 10th, 11th, etc. macro argument:
+.Ex
+\e$(12   \e$[12]   \e$[123]
+.Ee
+.LP
+Unless troff compatibility mode has been enabled, the arguments to the
+.IR groff -specific
+escape sequences `\eA', `\eC', '\eL', '\eN', '\eR', '\eV', '\eY',
+and '\eZ' are recognized and parsed, so that event procedures
+can be implemented correctly for these escape sequences.
+.SH "SEE ALSO"
+.BR unroff-html (1),
+.BR unroff-html-man (1),
+.BR unroff-html-ms (1);
+.br
+.BR troff (1),
+.BR groff (1);
+.BR elk (1).
+.LP
+Unroff Programmer's Manual.
+.LP
+http://www.informatik.uni-bremen.de/~net/unroff
+.SH AUTHOR
+Oliver Laumann, net@cs.tu-berlin.de
+.SH BUGS
+A number of low-level formatting features of troff (such as the
+absolute position indicator in numerical expressions)
+are not yet supported by
+.I unroff
+version \*(Ve, which is not critical for higher-level,
+structure-oriented target languages such as the Hypertext
+Markup Language.
+.LP
+Diversions are not supported, although specific back-ends are
+free to add this functionality.
+.LP
+Special characters are not treated right in certain contexts;
+in particular, special characters may not be used in place
+of plain characters where the characters act as some kind of
+delimiter as in
+.Ex
+\&.if \e(bsfoo\e(bsbar\e(bs ...
+.Ee
+.LP
+Spaces in an
+.B .if
+condition do not work; e.\|g. the following fails:
+.Ex
+\&.if ' ' ' ...
+.Ee
+.LP
+Conditional input is subject to string and number register
+expansion even if the corresponding if-condition evaluates to false.
+.LP
+There are no number register formats, i.\|e. the request
+.B .af
+does not work.
+.LP
+The set of punctuation marks that indicate end of sentence
+should be configurable.
+.LP
+Empty input lines and leading space should trigger a special
+event, so that their break semantics can be implemented correctly.
+.LP
+A comment in a line by itself currently does not generate a
+blank line.

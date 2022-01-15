@@ -1,0 +1,14 @@
+;;;; -*-Scheme-*-
+;;;;
+;;;; ~/.unroff -- initializations for unroff
+
+(define signature
+  (concat "Markup created by <em>%progname%</em> %version%," nbsp nbsp
+	  "%monthname+% %day%, %year%," nbsp nbsp "net@cs.tu-berlin.de"))
+
+(eval-if-mode (* html)
+  (set-option! 'mail-address "net@cs.tu-berlin.de"))
+
+(eval-if-mode (ms html)
+  (set-option! 'title "An `ms' document")
+  (set-option! 'signature signature))

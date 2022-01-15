@@ -1,0 +1,4 @@
+This directory holds a minimal, self-contained Elk runtime environment.
+All the files have been copied from the Elk 3.0 distribution.  If you
+have Elk installed at your site, you can replace this directory by
+a symbolic link to your site's Elk runtime directory.

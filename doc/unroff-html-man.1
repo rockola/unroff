@@ -1,0 +1,218 @@
+.\" $Revision: 1.6 $
+.ds Ve 1.0
+.\"
+.de Ex
+.RS
+.nf
+.nr sf \\n(.f
+.if !\\n(.U \{\
+.  ft B
+.  if n .sp
+.  if t .sp .5 \}
+..
+.de Ee
+.if !\\n(.U \{\
+.  ft \\n(sf
+.  if n .sp
+.  if t .sp .5 \}
+.fi
+.RE
+..
+.\"
+.de Sd
+.ds Dt \\$2
+..
+.\"
+.Sd $Date: 1995/08/23 12:07:31 $
+.TH unroff-html-man 1 "\*(Dt"
+.SH NAME
+unroff-html-man \- back-end to translate manual pages to HTML 2.0
+.SH SYNOPSIS
+.B unroff
+[
+.B \-fhtml
+] [
+.B \-man
+] [
+.IR file " | " option...\&
+]
+.SH OVERVIEW
+When called with the
+.B \-fhtml
+and
+.B \-man
+options, the troff translator
+.I unroff
+loads the back-end for converting UNIX manual pages to the Hypertext
+Markup Language (HTML) version 2.0.
+.LP
+Please read
+.BR unroff (1)
+first for an overview of the Scheme-based, programmable troff translator
+and for a description of the generic options that exist in
+addition to
+.B \-f
+and
+.BR \-m .
+The translation of basic troff requests, special characters,
+escape sequences, etc. as well as the HTML-specific options
+are described in
+.BR unroff-html (1).
+For information about extending and programming
+.I unroff
+also refer to the
+.IR "Unroff Programmer's Manual" .
+.SH OPTIONS
+The
+.B \-man
+extension provides one new keyword/value option in addition to
+those listed in
+.BR unroff (1)
+and
+.BR unroff-html (1):
+.TP
+.BR do-signature " (boolean)"
+If set to 1, a signature is appended to each output file.
+The signature is composed of a horizontal rule and a one-line
+message consisting of version information and date and time.
+The default value of this option is 1.
+.SH DESCRIPTION
+.I unroff
+reads and parses its input files (each containing a UNIX manual
+page); the HTML output is written to a separate output file
+for each input file.
+The name of an output file is obtained by appending the
+suffix \*(lq.html\*(rq to the name of the corresponding input
+file.
+Any
+.B document
+option is ignored if input files are named in the command line.
+As usual, the special file name
+.RB ` \- '
+can be used to interpolate standard input.
+.LP
+If no file name is given in the command line, a manual page
+is read from standard input and sent to standard output,
+unless the
+.B document
+option is given, in which case the HTML output is written
+to the specified file (with \*(lq.html\*(rq appended).
+Example:
+this call to
+.I unroff
+translates two manual pages and creates two corresponding output files,
+.B cc.1.html
+and
+.BR send.2.html :
+.Ex
+    unroff \-fhtml \-man /usr/man/man1/cc.1 /usr/man/man2/send.2
+.Ee
+.LP
+The following 
+.B \-man
+macros are recognized and translated (in addition to any user-defined macros):
+.LP
+.nf
+.if !\n(.U .ta 8n 16n 24n 32n 40n 48n 56n
+	.TH	.SH	.SS	.I	.B	.SB	.SM
+	.BI	.BR	.IB	.IR	.RB	.RI	.TP
+	.IP	.HP	.RS	.RE	.LP	.PP	.P
+.fi
+.LP
+In addition, the following Sun-specific macros are silently
+ignored (.TX generates an informational message containing
+its argument):
+.LP
+.nf
+	.TX	.IX	.DT	.PD	.UC
+.fi
+.LP
+The following predefined troff strings are recognized
+(\e*S expands to the empty string):
+.LP
+.nf
+	\e*R	\e*S	\e*(lq	\e*(rq
+.fi
+.LP
+The title of each HTML document generated is obtained by calling
+the primitive
+.I substitute
+(as explained in the Programmer's Manual) with the value of the option
+.B title
+and the first and second arguments passed to the initial call to
+.BR .TH .
+Thus, the specifiers \*(lq%1%\*(rq and \*(lq%2%\*(rq can be used
+in the option to interpolate the command (or whatever is documented
+in the manual page) and the section number.
+If
+.B title
+has not been specified, the string \*(lqManual page for %1%(%2%)\*(rq
+is taken.
+As generating the HTML title element is deferred until the call to
+.BR .TH ,
+any macros or other troff requests that produce output must not be
+used before the initial
+.BR .TH .
+.LP
+HTML header elements <h2> and <h3> are created for
+.B .SH
+and
+.B .SS
+requests.
+The markup created for the initial NAME section differs in that the
+contents of the section (usually a single line) is itself placed
+inside a header element.
+.LP
+The font switching macros are based on changes to the fonts `R',
+`I', and `B', as explained under FONTS in
+.BR unroff-html (1).
+Of course, this fails if the fonts (which are mounted on startup)
+are unmounted by explicit
+.B .fp
+requests.
+As HTML is lacking the concept of text size, the macro
+.B .SB
+is just an alias for
+.BR .B ,
+and
+.B .SM
+simply echoes its arguments.
+.LP
+The translation rules for
+.B .TP
+and
+.B .IP
+employ a heuristic to determine whether to generate a definition
+list or an unordered list:
+if the first in a sequence of tagged/indented paragraph macros is
+called with a tag consisting of the special character \e(bu, a
+definition list is begun, otherwise an unordered list.
+Subsequent invocations cause the list style to change if appropriate.
+Use of tagged paragraphs inside non-filled (pre-formatted) text
+violates the HTML definition and should be avoided.
+A warning message is printed in this and other questionable situations.
+.LP
+As hanging tags cannot be realized with HTML 2.0,
+a kludge is used for the
+.B .HP
+(hanging paragraph) macro:
+the macro starts a definition list (as does the ordinary
+.BR .TP
+macro), and everything up to the next request that causes a break
+is placed inside the definition tag.
+This method obviously fails if no break occurs in subsequent lines,
+but it works for the common, idiomatic use of hanging paragraphs
+in manual pages.
+.SH "SEE ALSO"
+.BR unroff (1),
+.BR unroff-html (1),
+.BR troff (1),
+.BR man "(5 or 7)."
+.LP
+Unroff Programmer's Manual.
+.LP
+http://www.informatik.uni-bremen.de/~net/unroff
+.LP
+Berners-Lee, Connolly, et al.,
+HyperText Markup Language Specification\(em2.0,
+Internet Draft, Internet Engineering Task Force.
