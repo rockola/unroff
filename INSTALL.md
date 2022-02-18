@@ -1,37 +1,41 @@
 Installation Guide for the `unroff' Source Distribution
 -------------------------------------------------------
 
-Requirements: you need Elk 2.2 or Elk 3.0 and an ANSI C compiler
-to install unroff from the source distribution.  If you don't have
-Elk and don't want to install it, you may want to obtain the binary
-unroff distribution instead.
+Requirements: you need Elk 2.2 or Elk 3.0 (or later) and an ANSI C
+compiler to install unroff from the source distribution.  If you don't
+have Elk and don't want to install it, you may want to obtain the
+binary unroff distribution instead.
 
-You can obtain Elk 3.0 in the World Wide Web at
+You can obtain Elk at
+
+   https://github.com/rockola/elk-scheme
+
+Elk 3.0 used to be available at
 
    http://www.informatik.uni-bremen.de/~net/elk
-
-and from a number of FTP servers including these:
-
    ftp://ftp.x.org/contrib/devel_tools/elk-3.0.tar.gz
    ftp://ftp.uni-bremen.de/pub/programming/languages/scheme/elk/elk-3.0.tar.gz
 
 
 
-o  If you are still using Elk 2.2, you may have to apply a small patch to
+## Elk 2.2 patch
+   If you are still using Elk 2.2, you may have to apply a small patch to
    your Elk installation.  The patch is in the file src/elk-2.2-patch.
    Assuming you have unpacked unroff under /usr/local/src/unroff-1.0,
    change to the directory where the Elk "src" directory is located and call:
    
       patch < /usr/local/src/unroff-1.0/src/elk-2.2-patch
 
-   If the patch program detects a `Reverse patch', the patch is not
+   If the patch program detects a 'Reverse patch', the patch is not
    required and you are done.  If the patch succeeded, recompile the
-   interpreter by calling "make" and "make install" in the directory "src".
+   interpreter by calling `make` and `make install` in the directory "src".
+
+## Makefile
 
 o  Go to the sub-directory "src" below the directory where you unpacked
    unroff:
 
-      cd /usr/local/src/unroff-1.0/src
+      cd /usr/local/src/unroff/src
 
    and edit the Makefile.  Check the site and compiler dependencies at the
    beginning of the Makefile and modify them if necessary.
@@ -40,13 +44,16 @@ o  Go to the sub-directory "src" below the directory where you unpacked
    override the directory later by setting the environment variable
    UNROFF_DIR before calling unroff.)
 
-o  Call "make depend" and then "make".
+## Make
+
+o  Call `make depend` and then `make`.
 
 o  You may want to remove the minimal Elk runtime environment contained
    in the directory "elk" and replace it by a symbolic link to your
    site's Elk runtime directory (i.e. the directory with sub-directories
    "scm" and "obj").
 
+## Test
 
 o  Test unroff and the HTML back-end included in the distribution.
 
@@ -88,9 +95,3 @@ o  You may want to place a number of default settings into an initialization
 o  If you find unroff useful, you may want to install it in a central
    directory at your site.  If so, install the executable, the contents
    of the directory "scm", and the manual pages.
-
-
-If you have any questions, problems, or suggestions send a message to
-net@cs.tu-berlin.de.
-
-# $Revision: 1.6 $
