@@ -1,11 +1,18 @@
+Unroff
+======
+
 This is version 1.0 of unroff.
 
 Unroff is a Scheme-based, programmable, extensible troff translator
 with a back-end for the Hypertext Markup Language.  Unroff is free
-software and is distributed both as source and as precompiled binaries.
+software and is distributed as source.
 
+Unroff has been made available at https://github.com/rockola/unroff as
+an [Elk Scheme](https://github.com/rockola/elk-scheme) sample
+application.  No attempt has been made (so far) to make unroff
+compatible with modern systems.
 
-* Overview
+## Overview
 
   Unroff reads and parses UNIX troff documents and translates the embedded
   markup into a different format.  Neither the actual output format nor
@@ -16,15 +23,15 @@ software and is distributed both as source and as precompiled binaries.
 
   Translation rules for new output formats and troff macro packages can
   be added easily by providing a corresponding set of Scheme procedures
-  (a `back-end').  Version 1.0 of unroff includes back-ends for translating
-  documents using the `man' and `ms' macros into the Hypertext Markup
+  (a 'back-end').  Version 1.0 of unroff includes back-ends for translating
+  documents using the 'man' and 'ms' macros into the Hypertext Markup
   Language (HTML) version 2.0.  Additional requests facilitate use of
   arbitrary hypertext links in troff documents.
 
 
-* unroff and troff
+## unroff and troff
 
-  In contrast to conventional troff `converters' (usually Perl scripts
+  In contrast to conventional troff 'converters' (usually Perl scripts
   some of which process nroff output) unroff includes a full troff parser
   and closely mimics the troff processing engine.
   
@@ -39,7 +46,7 @@ software and is distributed both as source and as precompiled binaries.
   escape sequences \$@ and \$*.
 
 
-* unroff and Scheme
+## unroff and Scheme
 
   Unroff uses Elk, the Scheme-based Extension Language Kit, to achieve
   programmability.  It includes a full Scheme language implementation
@@ -48,7 +55,7 @@ software and is distributed both as source and as precompiled binaries.
   been augmented by a set of new Scheme data types and primitives that
   aid in writing new unroff back-ends.
 
-  A new troff request and an extension to the `.ig' request allow for
+  A new troff request and an extension to the '.ig' request allow for
   Scheme code to be embedded in troff documents; the code is then
   evaluated on the fly as the documents are processed by unroff.
 
@@ -65,7 +72,7 @@ software and is distributed both as source and as precompiled binaries.
   processing the same troff input.
 
 
-* unroff and hypertext
+## unroff and hypertext
 
   troff documents that were originally written without intentions to
   make them available in the World Wide Web (such as UNIX manual pages)
@@ -83,7 +90,7 @@ software and is distributed both as source and as precompiled binaries.
   use of low-level troff constructs or to include tbl output verbatim).
 
 
-* Managing hypertext documents with troff
+## Managing hypertext documents with troff
 
   Authors can benefit from unroff not only as a converter for existing
   documents, but also when writing new documents that must exist both
@@ -112,22 +119,25 @@ software and is distributed both as source and as precompiled binaries.
   distribution.
 
 
-* Availability
+## Availability
+
+  https://github.com/rockola/unroff
+
+### Historical information
 
   The source distribution of unroff 1.0 as well as binary distributions
-  (with full Scheme source code and documentation) are available under:
+  (with full Scheme source code and documentation) used to be available under:
 
   http://www.informatik.uni-bremen.de/~net/unroff/unroff.html#dist
 
-  You can obtain Elk 3.0 from the same WWW server at:
+  Elk 3.0 used to be available at
 
   http://www.informatik.uni-bremen.de/~net/elk
-
-  Elk 3.0 is also available from a number of FTP servers including these:
-
   ftp://ftp.x.org/contrib/devel_tools/elk-3.0.tar.gz
   ftp://ftp.uni-bremen.de/pub/programming/languages/scheme/elk/elk-3.0.tar.gz
 
+## Credits
 
---
-Oliver Laumann  <net@cs.tu-berlin.de>                 # $Revision: 1.4 $
+unroff is Copyright (C) 1995 Oliver Laumann. See `COPYRIGHT` for more info.
+
+
